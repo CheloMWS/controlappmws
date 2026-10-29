@@ -1,58 +1,51 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
-import Link from "next/link";
-import { Suspense } from "react";
-
-export default function Home() {
+import Link from 'next/link';
+export const instant = false;
+export default async function Index() {
   return (
-    <main className="min-h-screen flex flex-col items-center">
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <Hero />
-          <main className="flex-1 flex flex-col gap-6 px-4">
-            <h2 className="font-medium text-xl mb-4">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
+    <div className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col items-center justify-center p-6 font-sans">
+      
+      {/* Contenedor Principal Estilizado */}
+      <div className="max-w-md w-full bg-[#111827] rounded-2xl border border-gray-800/80 p-10 shadow-2xl shadow-black/60 text-center space-y-8">
+        
+        {/* Logo o Icono del Sistema */}
+        <div className="mx-auto w-16 h-16 bg-indigo-600/10 border border-indigo-500/30 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/5">
+          <svg xmlns="http://w3.org" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-indigo-400">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" />
+          </svg>
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
+        {/* Título de la Aplicación */}
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            ControlApp MWS
+          </h1>
+          <p className="text-sm text-gray-400 mt-2">
+            Sistema de Gestión y Trazabilidad de Requerimientos Técnicos.
           </p>
-          <ThemeSwitcher />
-        </footer>
+        </div>
+
+        {/* Separador sutil */}
+        <div className="border-t border-gray-800/60 my-2"></div>
+
+        {/* Botón de Acción Principal Claro */}
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+            Para continuar, inicia sesión
+          </p>
+          <Link 
+            href="/auth/login" 
+            className="block w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/20 active:scale-[0.98] text-base tracking-medium"
+          >
+            Ingresar al Sistema →
+          </Link>
+        </div>
+
+        {/* Pie de página informativo */}
+        <p className="text-[11px] text-gray-600">
+          Acceso exclusivo para personal autorizado, clientes y programadores.
+        </p>
+
       </div>
-    </main>
+    </div>
   );
 }
