@@ -23,7 +23,7 @@ export default async function Index() {
             Sistema de Gestión y Trazabilidad de Requerimientos Técnicos.
           </p>
         </div>
-
+        
         {/* Separador sutil */}
         <div className="border-t border-gray-800/60 my-2"></div>
 
