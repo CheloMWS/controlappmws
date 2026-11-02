@@ -1,5 +1,5 @@
 import Link from 'next/link';
-export const instant = false;
+//export const instant = false;
 export default async function Index() {
   return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col items-center justify-center p-6 font-sans">

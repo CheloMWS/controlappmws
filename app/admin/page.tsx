@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
-export const instant = false;
+//export const instant = false;
 
 export default async function AdminPanelPage({ searchParams }: { searchParams: any }) {
   const supabase = await createClient();

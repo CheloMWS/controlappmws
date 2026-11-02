@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-export const instant = false;
+//export const instant = false;
 
 interface Props {
   params: Promise<{ id: string }>;
