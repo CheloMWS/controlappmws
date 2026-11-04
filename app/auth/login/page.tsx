@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-// Nos conectamos directamente al archivo que creamos recién en la carpeta lib
+// Importamos el cliente nativo oficial de tu carpeta lib
 import { createClient } from '../../../lib/supabase/client'; 
 
 function LoginForm() {
@@ -21,7 +21,8 @@ function LoginForm() {
     try {
       const supabase = createClient();
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      // 1. Iniciamos sesión. Las cookies se gestionan automáticamente en segundo plano.
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -32,8 +33,9 @@ function LoginForm() {
         return;
       }
 
-      // Esto le avisa a Next.js que la sesión es válida y te manda al panel
-      router.push('/dashboard');
+      // 2. 🚀 REDIRECCIÓN DIRECTA: Mandamos a todos al Dashboard unificado en /protected
+      // Como tu /protected ya lee el rol desde el Servidor, el enrutamiento será instantáneo y seguro.
+      router.push('/protected');
       router.refresh();
       
     } catch (err: any) {
@@ -49,9 +51,9 @@ function LoginForm() {
           ← Volver al inicio
         </Link>
         <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-          ControlApp MWS Conectado 🚀
+          ControlApp MWS ⚡
         </h1>
-        <p className="text-xs text-gray-400 mt-1">Ingresa de forma segura a tu panel</p>
+        <p className="text-xs text-gray-400 mt-1">Ingresa con tus credenciales de acceso</p>
       </div>
 
       {errorMsg && (
@@ -88,7 +90,7 @@ function LoginForm() {
           disabled={loading}
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl text-sm"
         >
-          {loading ? 'Validando...' : 'Entrar al Panel'}
+          {loading ? 'Iniciando sesión...' : 'Entrar al Sistema'}
         </button>
       </form>
     </div>
@@ -104,6 +106,11 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
+
+
+
 
 
 

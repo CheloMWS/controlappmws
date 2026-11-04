@@ -1,55 +1,47 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
+import { createClient } from "@/lib/supabase/server";
+import NavbarGlobal from "@/app/components/NavbarGlobal"; // Tu barra real
 import { AuthButton } from "@/components/auth-button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/lib/utils";
-import Link from "next/link";
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <main className="min-h-screen flex flex-col items-center">
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          {children}
-        </div>
+  const supabase = await createClient();
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-          </p>
-          <ThemeSwitcher />
-        </footer>
+  // 1. Validamos que exista un usuario logueado en la sesión
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect("/auth/login");
+  }
+
+  // 2. Traemos el perfil para validar el rol en la base de datos
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  // 3. Evaluamos si es administrador de forma estricta
+  const esAdmin = perfil?.role === "admin";
+
+  return (
+    <main className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col">
+      {/* 🔒 REGLA DE NEGOCIO: La barra solo se dibuja si el usuario es Administrador */}
+      {esAdmin && <NavbarGlobal />}
+
+      <div className="flex-1 w-full max-w-7xl mx-auto p-6">
+        {/* Aquí adentro se renderizan tus páginas de clientes y requerimientos */}
+        {children}
       </div>
+
+      <footer className="w-full flex items-center justify-between border-t border-gray-800 max-w-7xl mx-auto px-6 py-6 text-xs text-gray-500">
+        <p>ControlApp MWS © {new Date().getFullYear()}</p>
+        <AuthButton />
+      </footer>
     </main>
   );
 }
+

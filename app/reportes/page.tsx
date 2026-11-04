@@ -2,8 +2,6 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-//export const instant = false;
-
 interface Props {
   searchParams: Promise<{
     client_id?: string;
@@ -60,10 +58,16 @@ export default async function ReportesPage({ searchParams }: Props) {
   const totalTickets = necesidades?.length || 0;
   const enProceso = necesidades?.filter((n: any) => n.status === 'en proceso').length || 0;
   const terminados = necesidades?.filter((n: any) => n.status === 'terminado').length || 0;
-   return (
+
+  return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-100 p-6 font-sans">
       <div className="max-w-6xl mx-auto mt-6">
         
+        {/* 🚀 CORREGIDO: Enlace de retorno alineado a tu ruta real */}
+        <div className="mb-4">
+          <Link href="/protected" className="text-xs text-indigo-400 hover:underline">← Volver al Panel</Link>
+        </div>
+
         {/* Encabezado */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
@@ -87,7 +91,6 @@ export default async function ReportesPage({ searchParams }: Props) {
             <p className="text-3xl font-black text-emerald-500 mt-1">{terminados}</p>
           </div>
         </div>
-
         {/* 🔍 FORMULARIO DE FILTROS HISTÓRICOS */}
         <div className="bg-[#111827] border border-gray-800/80 p-6 rounded-2xl shadow-xl mb-8">
           <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-4">Filtrar Historial</h3>
@@ -113,7 +116,7 @@ export default async function ReportesPage({ searchParams }: Props) {
                 type="date"
                 name="fecha_desde"
                 defaultValue={filterDesde}
-                className="w-full p-2.5 text-sm border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 color-scheme-dark"
+                className="w-full p-2.5 text-sm border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 [color-scheme:dark]"
               />
             </div>
 
@@ -123,7 +126,7 @@ export default async function ReportesPage({ searchParams }: Props) {
                 type="date"
                 name="fecha_hasta"
                 defaultValue={filterHasta}
-                className="w-full p-2.5 text-sm border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 color-scheme-dark"
+                className="w-full p-2.5 text-sm border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 [color-scheme:dark]"
               />
             </div>
 
@@ -151,7 +154,6 @@ export default async function ReportesPage({ searchParams }: Props) {
           </p>
         )}
 
-        {/* 💡 CORREGIDO: Ahora usa 'necesidades' en lugar de 'needs' */}
         {necesidades?.length === 0 ? (
           <p className="text-gray-400 bg-[#111827] p-12 text-center rounded-2xl border border-dashed border-gray-800">
             No se encontraron requerimientos para los filtros seleccionados.
@@ -213,3 +215,4 @@ export default async function ReportesPage({ searchParams }: Props) {
     </div>
   );
 }
+

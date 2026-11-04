@@ -22,7 +22,7 @@ export default async function DetalleNecesidadPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-[#0B0F19] text-gray-100 flex flex-col items-center justify-center p-6">
         <p className="text-red-400 font-semibold mb-4 bg-red-950/30 border border-red-900/50 px-6 py-3 rounded-xl">Requerimiento no encontrado.</p>
-        <Link href="/dashboard" className="text-indigo-400 hover:underline text-sm">Volver al Dashboard</Link>
+        <Link href="/protected" className="text-indigo-400 hover:underline text-sm">Volver al Dashboard</Link>
       </div>
     );
   }
@@ -59,7 +59,7 @@ export default async function DetalleNecesidadPage({ params }: Props) {
         {/* Sección de Datos Históricos e Información */}
         <div className="md:col-span-2 space-y-6">
           <div className="bg-[#111827] p-6 rounded-2xl border border-gray-800/80 shadow-xl">
-            <Link href="/dashboard" className="text-xs text-indigo-400 hover:underline">← Volver al Dashboard</Link>
+            <Link href="/protected" className="text-xs text-indigo-400 hover:underline">← Volver al Dashboard</Link>
             <h1 className="text-2xl font-bold mt-3 mb-1 text-gray-100">Requerimiento #{necesidad.id}</h1>
             <p className="text-xs text-gray-400 mb-4">Empresa: <span className="font-semibold text-indigo-400">{necesidad.clients?.name}</span></p>
             

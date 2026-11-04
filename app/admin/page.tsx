@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-
-//export const instant = false;
+import Link from 'next/link';
 
 export default async function AdminPanelPage({ searchParams }: { searchParams: any }) {
   const supabase = await createClient();
@@ -12,7 +11,9 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
   if (!user) return redirect('/auth/login');
 
   const { data: perfil } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  if (perfil?.role !== 'admin') return redirect('/dashboard');
+  
+  // 🚀 Corregido: Si no es administrador, lo devuelve de forma segura a tu panel real
+  if (perfil?.role !== 'admin') return redirect('/protected');
 
   // 2. DETECTAR PESTAÑA ACTIVA EN LA URL
   const resolvedParams = await searchParams;
@@ -60,12 +61,11 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
       email,
       password,
       options: {
-        data: { full_name } // Pasa el nombre a la metadata pública
+        data: { full_name }
       }
     });
 
     if (!authError && authData.user) {
-      // Forzamos la actualización inmediata del rol y nombre en profiles
       await clientSupabase
         .from('profiles')
         .update({ full_name, role })
@@ -121,13 +121,14 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
             </h1>
             <p className="text-sm text-gray-400 mt-1">Alta global de cuentas, edición de entidades y mapeos de acceso.</p>
           </div>
-          <a href="/dashboard" className="text-sm text-indigo-400 hover:underline">← Ir al Dashboard</a>
+          {/* 🚀 Corregido: Enlace de retorno alineado a tu ruta real */}
+          <Link href="/protected" className="text-sm text-indigo-400 hover:underline">← Volver al Panel</Link>
         </div>
 
         {/* Sistema de Pestañas */}
         <div className="flex gap-2 mb-6 border-b border-gray-800/60 pb-px">
           {['empresas', 'usuarios', 'accesos'].map((t) => (
-            <a
+            <Link
               key={t}
               href={`/admin?tab=${t}`}
               className={`px-5 py-2.5 font-semibold text-sm rounded-t-xl transition-all capitalize ${
@@ -137,9 +138,10 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
               }`}
             >
               {t === 'accesos' ? 'Asignar Empresas' : t}
-            </a>
+            </Link>
           ))}
         </div>
+
         {/* 🏢 CONTENIDO PESTAÑA 1: EMPRESAS (ALTA Y MODIFICACIÓN) */}
         {tab === 'empresas' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -191,7 +193,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
             </div>
           </div>
         )}
-
         {/* 👥 CONTENIDO PESTAÑA 2: USUARIOS (ALTA Y MODIFICACIÓN) */}
         {tab === 'usuarios' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -260,7 +261,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
                   <form action={modificarUsuario} key={userItem.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-[#1F2937]/30 p-3 rounded-xl border border-gray-800/40">
                     <input type="hidden" name="user_id" value={userItem.id} />
                     
-                    {/* Campo para reescribir el Nombre Completo */}
                     <div className="sm:col-span-6">
                       <input
                         type="text"
@@ -271,7 +271,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
                       />
                     </div>
 
-                    {/* Selector de Roles */}
                     <div className="sm:col-span-4">
                       <select
                         name="role"
@@ -284,7 +283,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
                       </select>
                     </div>
 
-                    {/* Botón de envío de cambios */}
                     <div className="sm:col-span-2 text-right">
                       <button 
                         type="submit" 
@@ -300,7 +298,7 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
           </div>
         )}
 
-               {/* 🔗 CONTENIDO PESTAÑA 3: MATRIZ DE ACCESOS (Multi-empresa) */}
+        {/* 🔗 CONTENIDO PESTAÑA 3: MATRIZ DE ACCESOS (Multi-empresa) */}
         {tab === 'accesos' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
@@ -321,7 +319,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
                     className="w-full p-3 text-xs border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="">Elegir cliente...</option>
-                    {/* 💡 AQUÍ ESTÁ LA CORRECCIÓN: Ahora muestra TODOS los usuarios registrados de inmediato */}
                     {usuarios?.map(u => (
                       <option key={u.id} value={u.id}>
                         {u.full_name} ({u.role ? u.role.toUpperCase() : 'SIN ROL'})
@@ -402,5 +399,3 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
     </div>
   );
 }
-
-
