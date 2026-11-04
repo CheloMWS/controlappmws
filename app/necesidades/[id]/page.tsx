@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-
-//export const instant = false;
+import ImageZoom from '../../components/ImageZoom'; // Asegúrate de que esta ruta apunte a tu componente ImageZoom
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -25,6 +24,16 @@ export default async function DetalleNecesidadPage({ params }: Props) {
         <Link href="/protected" className="text-indigo-400 hover:underline text-sm">Volver al Dashboard</Link>
       </div>
     );
+  }
+
+  // 1. OBTENER URL PÚBLICA DESDE TU BUCKET "need-attachments"
+  let imageUrl = null;
+  if (necesidad.file_name) {
+    const { data } = supabase.storage
+      .from('need-attachments')
+      .getPublicUrl(necesidad.file_name);
+    
+    imageUrl = data?.publicUrl;
   }
 
   const { data: atenciones } = await supabase
@@ -68,12 +77,13 @@ export default async function DetalleNecesidadPage({ params }: Props) {
               <p className="whitespace-pre-line text-sm text-gray-300 leading-relaxed">{necesidad.description}</p>
             </div>
 
-            {necesidad.image_url && (
+            {/* 2. COMPONENTE INTERACTIVO DE ZOOM PARA LA FOTO */}
+            {imageUrl && (
               <div>
                 <h3 className="font-bold text-[10px] text-gray-500 uppercase tracking-widest mb-2">Evidencia Adjunta:</h3>
-                <a href={necesidad.image_url} target="_blank" rel="noreferrer" className="block w-fit">
-                  <img src={necesidad.image_url} alt="Evidencia" className="max-h-72 object-contain rounded-xl border border-gray-800 bg-[#0B0F19] hover:opacity-90 transition-opacity" />
-                </a>
+                <div className="max-w-md">
+                  <ImageZoom src={imageUrl} alt={`Evidencia Requerimiento ${necesidad.id}`} />
+                </div>
               </div>
             )}
           </div>
@@ -149,3 +159,4 @@ export default async function DetalleNecesidadPage({ params }: Props) {
     </div>
   );
 }
+
