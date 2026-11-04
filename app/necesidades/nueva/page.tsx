@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+
 export const dynamic = "force-dynamic";
 
 export default function NuevaNecesidadPage() {
