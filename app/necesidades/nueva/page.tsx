@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
 export default function NuevaNecesidadPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const supabase = createClient();
+  
+  // 🟢 CORRECCIÓN: Inicializamos supabase como un estado para proteger el servidor
+  const [supabase, setSupabase] = useState<any>(null);
 
   const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +22,16 @@ export default function NuevaNecesidadPage() {
   const [clientId, setClientId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  // 🟢 CORRECCIÓN: Creamos el cliente de Supabase únicamente en el navegador
+  useEffect(() => {
+    setSupabase(createClient());
+  }, []);
+
   // 🔍 CARGA INTELIGENTE DE DATOS DESDE EL NAVEGADOR
   useEffect(() => {
+    // Si supabase aún no se ha inicializado, esperamos
+    if (!supabase) return;
+
     async function inicializarFormulario() {
       try {
         const { data: { user: activeUser } } = await supabase.auth.getUser();
@@ -54,7 +64,6 @@ export default function NuevaNecesidadPage() {
           setClientes(globales || []);
         } else {
           // Cliente Común: Traemos las empresas haciendo un JOIN directo en una sola consulta
-          // Nota: Esto asume que tienes configurada la clave foránea en la tabla client_users apuntando a clients
           const { data: mapeos, error: clientError } = await supabase
             .from('client_users')
             .select(`
@@ -73,7 +82,7 @@ export default function NuevaNecesidadPage() {
           // Transformamos el formato del JOIN a una lista plana de empresas válidas
           const empresasAsignadas = mapeos
             ?.map((m: any) => m.clients)
-            .filter((c) => c !== null) || [];
+            .filter((c: any) => c !== null) || [];
 
           // SI EL JOIN ANTERIOR FALLA POR FALTA DE RELACIÓN FORMAL, RESPALDO USANDO TU LÓGICA ORIGINAL CON LOGS DE ERROR:
           if (empresasAsignadas.length === 0 && mapeos && mapeos.length > 0) {
@@ -98,7 +107,8 @@ export default function NuevaNecesidadPage() {
     }
 
     inicializarFormulario();
-  }, [router, supabase]);
+  }, [router, supabase]); // Añadimos supabase a las dependencias
+
 
   // 💾 PROCESAMIENTO SEGURO DE REGISTRO
   async function handleEnviarRequerimiento(e: React.FormEvent) {
