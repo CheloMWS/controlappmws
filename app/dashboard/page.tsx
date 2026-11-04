@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 // 👈 Importamos nuestro nuevo componente de cliente de forma segura
-import FormattedDate from '../components/FormattedDate';
+//import FormattedDate from '../components/FormattedDate';
 
 
 export default async function DashboardPage() {
@@ -88,8 +88,7 @@ export default async function DashboardPage() {
                   <tr key={item.id} className="hover:bg-[#1F2937]/30 transition-colors">
                     <td className="p-4 pl-6 text-sm text-gray-400 font-medium">
                       {/* Aquí llamamos al formateador de cliente de manera segura */}
-                      <FormattedDate dateString={item.date} />
-                    </td>
+                      </td>
                     <td className="p-4 font-semibold text-gray-200">{item.clients?.name || 'Sin cliente'}</td>
                     <td className="p-4 text-sm text-gray-300 font-medium">{item.profiles?.name || 'Sistema / Desconocido'}</td>
                     <td className="p-4 text-gray-400 max-w-xs truncate text-sm">{item.description}</td>
