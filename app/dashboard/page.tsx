@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 // 👈 Importamos nuestro nuevo componente de cliente de forma segura
-//import FormattedDate from '../components/FormattedDate';
+import FormattedDate from '../components/FormattedDate';
 
 
 export default async function DashboardPage() {
