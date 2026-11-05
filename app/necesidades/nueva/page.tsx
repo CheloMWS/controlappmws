@@ -128,12 +128,20 @@ export default function NuevaNecesidadPage() {
 
         if (file && file.size > 0) {
           fileName = `${Date.now()}_${file.name}`;
+          
           const { data: storageData, error: storageError } = await supabase
             .storage
             .from('need-attachments')
             .upload(fileName, file);
 
-          if (!storageError && storageData) {
+          if (storageError) {
+            // Esto te va a mostrar el error exacto en la consola del navegador
+            console.error("❌ Error crítico en Supabase Storage:", storageError.message, storageError);
+            setErrorMsg(`Error al subir la imagen: ${storageError.message}`);
+            return; // Frenamos la ejecución para que no inserte datos rotos
+          }
+
+          if (storageData) {
             const { data: urlData } = supabase
               .storage
               .from('need-attachments')
