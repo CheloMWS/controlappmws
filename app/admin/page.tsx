@@ -12,7 +12,7 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
 
   const { data: perfil } = await supabase.from('profiles').select('role').eq('id', user.id).single();
   
-  // 🚀 Corregido: Si no es administrador, lo devuelve de forma segura a tu panel real
+  // Si no es administrador, lo devuelve de forma segura a tu panel real
   if (perfil?.role !== 'admin') return redirect('/protected');
 
   // 2. DETECTAR PESTAÑA ACTIVA EN LA URL
@@ -28,11 +28,19 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
     .select('id, user_id, client_id, profiles(full_name), clients(name)');
 
   // ⚡ SERVER ACTIONS: PROCESAMIENTO SEGURO EN EL SERVIDOR
+
+  // 🏢 ALTA DE NUEVAS EMPRESAS
   async function crearEmpresa(formData: FormData) {
     'use server';
     const name = formData.get('name') as string;
+    if (!name || name.trim() === '') return;
+
     const clientSupabase = await createClient();
-    await clientSupabase.from('clients').insert({ name });
+    const { error } = await clientSupabase
+      .from('clients')
+      .insert({ name: name.trim() });
+
+    if (error) console.error("Error creando empresa en Supabase:", error.message);
     revalidatePath('/admin');
   }
 
@@ -41,12 +49,21 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
     'use server';
     const id = formData.get('client_id') as string;
     const nuevoNombre = formData.get('name') as string;
+    if (!id || !nuevoNombre) return;
+
     const clientSupabase = await createClient();
-    await clientSupabase.from('clients').update({ name: nuevoNombre }).eq('id', parseInt(id));
+    const targetId = isNaN(Number(id)) ? id : Number(id);
+
+    const { error } = await clientSupabase
+      .from('clients')
+      .update({ name: nuevoNombre.trim() })
+      .eq('id', targetId);
+
+    if (error) console.error("Error modificando empresa en Supabase:", error.message);
     revalidatePath('/admin');
   }
 
-  // 👑 ALTA DE USUARIOS NUEVOS (Seguridad + Base de Datos)
+  // 👑 ALTA DE USUARIOS NUEVOS (Seguridad + Base de Datos usando INSERT)
   async function crearUsuarioNuevo(formData: FormData) {
     'use server';
     const email = formData.get('email') as string;
@@ -54,9 +71,10 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
     const full_name = formData.get('full_name') as string;
     const role = formData.get('role') as string;
 
+    if (!email || !password || !full_name || !role) return;
+
     const clientSupabase = await createClient();
     
-    // Registra al usuario en Supabase Auth de forma segura
     const { data: authData, error: authError } = await clientSupabase.auth.signUp({
       email,
       password,
@@ -65,11 +83,21 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
       }
     });
 
-    if (!authError && authData.user) {
-      await clientSupabase
+    if (authError) {
+      console.error("Error en Auth SignUp:", authError.message);
+      return;
+    }
+
+    if (authData.user) {
+      const { error: profileError } = await clientSupabase
         .from('profiles')
-        .update({ full_name, role })
-        .eq('id', authData.user.id);
+        .insert({ 
+          id: authData.user.id, 
+          full_name: full_name.trim(), 
+          role: role 
+        });
+
+      if (profileError) console.error("Error creando perfil:", profileError.message);
     }
     revalidatePath('/admin');
   }
@@ -81,34 +109,54 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
     const nuevoNombre = formData.get('full_name') as string;
     const nuevoRol = formData.get('role') as string;
     
+    if (!userId || !nuevoNombre || !nuevoRol) return;
+
     const clientSupabase = await createClient();
-    await clientSupabase
+    const { error } = await clientSupabase
       .from('profiles')
-      .update({ full_name: nuevoNombre, role: nuevoRol })
+      .update({ full_name: nuevoNombre.trim(), role: nuevoRol })
       .eq('id', userId);
+
+    if (error) console.error("Error modificando usuario:", error.message);
     revalidatePath('/admin');
   }
 
+  // 🔗 VINCULAR USUARIO A EMPRESA
   async function asignarUsuarioAEmpresa(formData: FormData) {
     'use server';
     const userId = formData.get('user_id') as string;
     const clientId = formData.get('client_id') as string;
+    if (!userId || !clientId) return;
+
     const clientSupabase = await createClient();
-    await clientSupabase.from('client_users').insert({
+    const targetClientId = isNaN(Number(clientId)) ? clientId : Number(clientId);
+
+    const { error } = await clientSupabase.from('client_users').insert({
       user_id: userId,
-      client_id: parseInt(clientId)
+      client_id: targetClientId
     });
+
+    if (error) console.error("Error asignando usuario a empresa:", error.message);
     revalidatePath('/admin');
   }
 
+  // ❌ REVOCAR ASIGNACIÓN DE EMPRESA
   async function eliminarAsignacion(formData: FormData) {
     'use server';
     const idAsignacion = formData.get('id') as string;
+    if (!idAsignacion) return;
+
     const clientSupabase = await createClient();
-    await clientSupabase.from('client_users').delete().eq('id', parseInt(idAsignacion));
+    const targetAsignacionId = isNaN(Number(idAsignacion)) ? idAsignacion : Number(idAsignacion);
+
+    const { error } = await clientSupabase
+      .from('client_users')
+      .delete()
+      .eq('id', targetAsignacionId);
+
+    if (error) console.error("Error al eliminar asignación:", error.message);
     revalidatePath('/admin');
   }
-
   return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-100 p-6 font-sans">
       <div className="max-w-5xl mx-auto mt-6">
@@ -121,7 +169,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
             </h1>
             <p className="text-sm text-gray-400 mt-1">Alta global de cuentas, edición de entidades y mapeos de acceso.</p>
           </div>
-          {/* 🚀 Corregido: Enlace de retorno alineado a tu ruta real */}
           <Link href="/protected" className="text-sm text-indigo-400 hover:underline">← Volver al Panel</Link>
         </div>
 
@@ -196,7 +243,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
         {/* 👥 CONTENIDO PESTAÑA 2: USUARIOS (ALTA Y MODIFICACIÓN) */}
         {tab === 'usuarios' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Formulario para dar de Alta Cuentas Reales con Clave */}
             <div className="bg-[#111827] p-6 rounded-2xl border border-gray-800/80 h-fit">
               <h3 className="text-lg font-bold mb-1 text-gray-200">Registrar Usuario</h3>
               <p className="text-xs text-gray-400 mb-4">Crea credenciales de acceso reales en el sistema de seguridad.</p>
@@ -251,7 +297,6 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
               </form>
             </div>
 
-            {/* Listado y Formulario en Línea para Modificar Usuarios Existentes */}
             <div className="md:col-span-2 bg-[#111827] p-6 rounded-2xl border border-gray-800/80 space-y-4">
               <h3 className="text-lg font-bold text-gray-200 mb-1">Modificar Usuarios Existentes</h3>
               <p className="text-xs text-gray-400 mb-4">Edita los nombres o alterna los privilegios globales en tiempo real.</p>
@@ -297,12 +342,9 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
             </div>
           </div>
         )}
-
         {/* 🔗 CONTENIDO PESTAÑA 3: MATRIZ DE ACCESOS (Multi-empresa) */}
         {tab === 'accesos' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Formulario de vinculación */}
             <div className="bg-[#111827] p-6 rounded-2xl border border-gray-800/80 h-fit">
               <h3 className="text-lg font-bold mb-2 text-gray-200">Vincular Acceso</h3>
               <p className="text-xs text-gray-400 mb-5 leading-relaxed">
@@ -343,14 +385,13 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
                 </div>
                 <button 
                   type="submit" 
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-xl font-semibold text-xs tracking-medium transition-all shadow-lg shadow-emerald-600/10 active:scale-[0.98]"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-xl font-semibold text-xs tracking-medium transition-all shadow-lg active:scale-[0.98]"
                 >
                   Otorgar Permiso
                 </button>
               </form>
             </div>
 
-            {/* Listado de mapeos activos */}
             <div className="md:col-span-2 bg-[#111827] p-6 rounded-2xl border border-gray-800/80">
               <h3 className="text-lg font-bold mb-4 text-gray-200">Matriz de Permisos Activos</h3>
               <div className="overflow-x-auto">
@@ -399,3 +440,4 @@ export default async function AdminPanelPage({ searchParams }: { searchParams: a
     </div>
   );
 }
+
