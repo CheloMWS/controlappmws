@@ -11,7 +11,6 @@ export default function NuevaNecesidadPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   
-  // 🟢 CORRECCIÓN: Inicializamos supabase como un estado para proteger el servidor
   const [supabase, setSupabase] = useState<any>(null);
 
   const [clientes, setClientes] = useState<any[]>([]);
@@ -22,14 +21,11 @@ export default function NuevaNecesidadPage() {
   const [clientId, setClientId] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // 🟢 CORRECCIÓN: Creamos el cliente de Supabase únicamente en el navegador
   useEffect(() => {
     setSupabase(createClient());
   }, []);
 
-  // 🔍 CARGA INTELIGENTE DE DATOS DESDE EL NAVEGADOR
   useEffect(() => {
-    // Si supabase aún no se ha inicializado, esperamos
     if (!supabase) return;
 
     async function inicializarFormulario() {
@@ -42,81 +38,54 @@ export default function NuevaNecesidadPage() {
         }
         setUser(activeUser);
 
-        // Consultamos el rol real del perfil
-        const { data: perfil, error: perfilError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', activeUser.id)
-          .single();
+        // 1. Buscamos exclusivamente los IDs de empresas asignadas al usuario en client_users
+        const { data: mapeos, error: mapError } = await supabase
+          .from('client_users')
+          .select('client_id')
+          .eq('user_id', activeUser.id);
 
-        if (perfilError) {
-          console.error("Error al obtener perfil:", perfilError.message);
+        if (mapError) {
+          console.error("Error al obtener asignaciones en client_users:", mapError.message);
+          setClientes([]);
+          return;
         }
 
-        if (perfil?.role === 'admin' || perfil?.role === 'developer') {
-          // Administrador: Trae absolutamente todas las empresas globales
-          const { data: globales, error: globalError } = await supabase
+        const idsAsignados = mapeos?.map((m: any) => m.client_id) || [];
+
+        // 2. Si tiene empresas asignadas, traemos sus datos ordenados por nombre
+        if (idsAsignados.length > 0) {
+          const { data: empresasFinales, error: clientError } = await supabase
             .from('clients')
             .select('id, name')
+            .in('id', idsAsignados)
             .order('name');
-          
-          if (globalError) console.error("Error RLS/Fetch Admin:", globalError.message);
-          setClientes(globales || []);
-        } else {
-          // Cliente Común: Traemos las empresas haciendo un JOIN directo en una sola consulta
-          const { data: mapeos, error: clientError } = await supabase
-            .from('client_users')
-            .select(`
-              client_id,
-              clients (
-                id,
-                name
-              )
-            `)
-            .eq('user_id', activeUser.id);
 
           if (clientError) {
-            console.error("Error RLS/Fetch Client (revisar políticas):", clientError.message);
-          }
-
-          // Transformamos el formato del JOIN a una lista plana de empresas válidas
-          const empresasAsignadas = mapeos
-            ?.map((m: any) => m.clients)
-            .filter((c: any) => c !== null) || [];
-
-          // SI EL JOIN ANTERIOR FALLA POR FALTA DE RELACIÓN FORMAL, RESPALDO USANDO TU LÓGICA ORIGINAL CON LOGS DE ERROR:
-          if (empresasAsignadas.length === 0 && mapeos && mapeos.length > 0) {
-            const idsPlanos = mapeos.map((m: any) => m.client_id);
-            const { data: empresasFinales, error: backupError } = await supabase
-              .from('clients')
-              .select('id, name')
-              .in('id', idsPlanos)
-              .order('name');
-            
-            if (backupError) console.error("Error en consulta de respaldo:", backupError.message);
-            setClientes(empresasFinales || []);
+            console.error("Error al obtener detalles de empresas:", clientError.message);
+            setClientes([]);
           } else {
-            setClientes(empresasAsignadas);
+            setClientes(empresasFinales || []);
           }
+        } else {
+          setClientes([]);
         }
       } catch (err) {
         console.error("Error crítico al cargar empresas:", err);
+        setClientes([]);
       } finally {
         setLoading(false);
       }
     }
 
     inicializarFormulario();
-  }, [router, supabase]); // Añadimos supabase a las dependencias
+  }, [router, supabase]);
 
-
-  // 💾 PROCESAMIENTO SEGURO DE REGISTRO
   async function handleEnviarRequerimiento(e: React.FormEvent) {
     e.preventDefault();
     if (!clientId || !description.trim() || !user) return;
     
     setErrorMsg('');
-    
+
     startTransition(async () => {
       try {
         const targetElement = e.target as HTMLFormElement;
@@ -135,10 +104,9 @@ export default function NuevaNecesidadPage() {
             .upload(fileName, file);
 
           if (storageError) {
-            // Esto te va a mostrar el error exacto en la consola del navegador
             console.error("❌ Error crítico en Supabase Storage:", storageError.message, storageError);
             setErrorMsg(`Error al subir la imagen: ${storageError.message}`);
-            return; // Frenamos la ejecución para que no inserte datos rotos
+            return;
           }
 
           if (storageData) {
@@ -206,10 +174,12 @@ export default function NuevaNecesidadPage() {
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               required 
-              disabled={isPending}
-              className="w-full p-3 border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              disabled={isPending || clientes.length === 0}
+              className="w-full p-3 border rounded-xl bg-[#1F2937] border-gray-800 text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
             >
-              <option value="">Selecciona un cliente</option>
+              <option value="">
+                {clientes.length === 0 ? 'No tienes empresas asignadas' : 'Selecciona un cliente'}
+              </option>
               {clientes.map((emp) => (
                 <option key={emp.id} value={emp.id}>{emp.name}</option>
               ))}
@@ -243,8 +213,8 @@ export default function NuevaNecesidadPage() {
 
           <button 
             type="submit" 
-            disabled={isPending}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl text-sm mt-2 transition-all"
+            disabled={isPending || clientes.length === 0}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl text-sm mt-2 transition-all"
           >
             {isPending ? 'Enviando requerimiento...' : 'Enviar Requerimiento'}
           </button>
@@ -253,3 +223,4 @@ export default function NuevaNecesidadPage() {
     </div>
   );
 }
+
